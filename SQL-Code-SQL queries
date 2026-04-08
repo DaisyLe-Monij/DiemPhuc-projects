@@ -1,83 +1,95 @@
--- 1
--- Customer Demographics Analysis
--- Objective: Analyze customer demographics like age, marital status, and education level.
+WITH customer_statistic AS (
+    SELECT
+        ct.CustomerID
+        , DATEDIFF('2022-09-01', MAX(STR_TO_DATE(ct.Purchase_Date, '%m/%d/%Y'))) 
+          AS Recency
+        , ROUND(COUNT(DISTINCT STR_TO_DATE(ct.Purchase_Date, '%m/%d/%Y'))
+            / NULLIF(DATEDIFF('2022-09-01', STR_TO_DATE(cr.created_date, '%m/%d/%Y')) 
+            / 365.0,0),2) AS Frequency
+        , ROUND(SUM(ct.GMV)/ NULLIF(DATEDIFF('2022-09-01',STR_TO_DATE(cr.created_date, '%m/%d/%Y')) 
+           / 365.0,0),2) AS Monetary
+        , DATEDIFF('2022-09-01',STR_TO_DATE(cr.created_date, '%m/%d/%Y')) 
+          AS contract_age
+    FROM Customer_Transaction ct
+    JOIN Customer_Registered cr
+        ON cr.ID = ct.CustomerID
+    WHERE ct.Purchase_Date IS NOT NULL
+      AND cr.created_date IS NOT NULL
+    GROUP BY
+        ct.CustomerID,
+        cr.created_date
+),
 
--- 1.a
--- Count of customers by job type:
-SELECT job, 
-       COUNT(*) AS customer_count
-       FROM customers
-       GROUP BY job;
+customer_rn AS (
+    SELECT
+        cs.*,
+        ROW_NUMBER() OVER (ORDER BY cs.Recency ASC)   AS Recency_rn,
+        ROW_NUMBER() OVER (ORDER BY cs.Frequency ASC) AS Frequency_rn,
+        ROW_NUMBER() OVER (ORDER BY cs.Monetary ASC)  AS Monetary_rn,
+        COUNT(*) OVER () AS total_rows
+    FROM customer_statistic cs
+),
 
--- 1.b
--- Average age by education level:
-SELECT education, 
-       AVG(age) AS avg_age
-       FROM customers
-       GROUP BY education;
+cutoff AS (
+    SELECT
+        MAX(CASE WHEN Recency_rn   = ROUND(total_rows * 0.25, 0) THEN Recency   END) AS R_q1,
+        MAX(CASE WHEN Recency_rn   = ROUND(total_rows * 0.50, 0) THEN Recency   END) AS R_q2,
+        MAX(CASE WHEN Recency_rn   = ROUND(total_rows * 0.75, 0) THEN Recency   END) AS R_q3,
 
--- 1.c
--- Number of married vs. single customers:
-SELECT marital, 
-       COUNT(*) AS customer_count
-       FROM customers
-       GROUP BY marital;
+        MAX(CASE WHEN Frequency_rn = ROUND(total_rows * 0.25, 0) THEN Frequency END) AS F_q1,
+        MAX(CASE WHEN Frequency_rn = ROUND(total_rows * 0.50, 0) THEN Frequency END) AS F_q2,
+        MAX(CASE WHEN Frequency_rn = ROUND(total_rows * 0.75, 0) THEN Frequency END) AS F_q3,
 
--- 2
--- Loan and Balance Correlation
--- Objective: Investigate the relationship between whether a customer has a loan and their account balance.
--- 2.a
--- Average balance for customers with and without a loan:
-SELECT loan, 
-       AVG(balance) AS avg_balance
-       FROM customers
-       GROUP BY loan;
+        MAX(CASE WHEN Monetary_rn  = ROUND(total_rows * 0.25, 0) THEN Monetary  END) AS M_q1,
+        MAX(CASE WHEN Monetary_rn  = ROUND(total_rows * 0.50, 0) THEN Monetary  END) AS M_q2,
+        MAX(CASE WHEN Monetary_rn  = ROUND(total_rows * 0.75, 0) THEN Monetary  END) AS M_q3
+    FROM customer_rn
+),
 
--- 2.b
--- Count of customers with loan by job type:
-SELECT job, 
-       COUNT(*) AS customer_count
-       FROM customers
-       WHERE loan = 'yes'
-       GROUP BY job;
+customer_rfm AS (
+    SELECT
+        cr.CustomerID,
+        cr.Recency,
+        cr.Frequency,
+        cr.Monetary,
 
--- 3
--- Campaign Effectiveness
--- Objective: Evaluate how successful the marketing campaign is, based on previous contact outcomes and customer subscription.
--- 3.1
--- Conversion rate of customers who were contacted:
-SELECT contact, 
-       COUNT(CASE WHEN y = 'yes' THEN 1 END) AS converted_customers,
-       COUNT(*) AS total_customers,
-       (COUNT(CASE WHEN y = 'yes' THEN 1 END) * 100 / COUNT(*)) AS conversion_rate
-       FROM customers
-       GROUP BY contact;
+        CASE
+            WHEN cr.Recency < c.R_q1 THEN 4
+            WHEN cr.Recency < c.R_q2 THEN 3
+            WHEN cr.Recency < c.R_q3 THEN 2
+            ELSE 1
+        END AS R,
 
--- 3.2
--- Outcome of the campaign based on previous marketing campaign results:
-SELECT poutcome, 
-       COUNT(CASE WHEN y = 'yes' THEN 1 END) AS converted_customers,
-       COUNT(*) AS total_customers
-       FROM customers
-       GROUP BY poutcome;
+        CASE
+            WHEN cr.Frequency < c.F_q1 THEN 1
+            WHEN cr.Frequency < c.F_q2 THEN 2
+            WHEN cr.Frequency < c.F_q3 THEN 3
+            ELSE 4
+        END AS F,
 
--- 4
--- Seasonal Trends in Marketing Campaigns
--- Objective: Analyze whether certain months show better campaign success.
--- Subscription rate by month:
-SELECT month, 
-       COUNT(CASE WHEN y = 'yes' THEN 1 END) AS subscribed_count,
-       COUNT(*) AS total_customers,
-       (COUNT(CASE WHEN y = 'yes' THEN 1 END) * 100 / COUNT(*)) AS subscription_rate
-FROM customers
-GROUP BY month;
+        CASE
+            WHEN cr.Monetary < c.M_q1 THEN 1
+            WHEN cr.Monetary < c.M_q2 THEN 2
+            WHEN cr.Monetary < c.M_q3 THEN 3
+            ELSE 4
+        END AS M
 
--- 5
--- Churn Analysis
--- Objective: Analyze the factors contributing to customer churn (not subscribing to the product).
-SELECT job, 
-       COUNT(CASE WHEN y = 'no' THEN 1 END) AS churn_count,
-       COUNT(*) AS total_customers,
-       (COUNT(CASE WHEN y = 'no' THEN 1 END) * 100 / COUNT(*)) AS churn_rate
-FROM customers
-GROUP BY job;    
+    FROM customer_rn cr
+    CROSS JOIN cutoff c
+)
+
+SELECT
+        *,
+        CONCAT(R, F, M) AS RFM,
+        CASE
+            WHEN R >= 3 AND F >= 3 AND M >= 3 THEN 'Superiors Loyalists'
+            WHEN R >= 3 AND F >= 3 AND M < 3 THEN 'Potential Loyalists'
+            WHEN R >= 3 AND F < 3 AND M >= 3 THEN 'Responsive'
+            WHEN R >= 3 AND F < 3 AND M < 3 THEN 'Promising'
+            WHEN R < 3 AND F >= 3 AND M >= 3 THEN 'Hibernating Loyalists'
+            WHEN R < 3 AND F >= 3 AND M < 3 THEN 'Need Attention'
+            WHEN R < 3 AND F < 3 AND M >= 3 THEN 'About to Sleep'
+            ELSE 'At Risk'
+        END AS Segment
+    FROM customer_rfm
+

@@ -1,3 +1,4 @@
+/*Coding with MySQL*/
 WITH customer_statistic AS (
     SELECT
         ct.CustomerID

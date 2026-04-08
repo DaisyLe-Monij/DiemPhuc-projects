@@ -18,4 +18,8 @@ The main objectives of the project are:
 
 By using SQL queries, the analyst aims to extract meaningful insights from this customer data to inform decisions on how to optimize marketing strategies and improve customer engagement.
 
+Dashboard link: https://app.powerbi.com/groups/me/reports/9330ae91-7590-4c15-be52-6d8d546c04ca/935e9580cca98d251b90?experience=power-bi
+[Description]
+<img width="1157" height="648" alt="image" src="https://github.com/user-attachments/assets/5d7171e1-7fb0-46ea-8bce-8ebaea49e5a0" />
+<img width="1036" height="603" alt="image" src="https://github.com/user-attachments/assets/d104c223-5517-45d4-8df5-93e635345d8f" />
 

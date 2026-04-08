@@ -1,22 +1,44 @@
 # Customer 360 Data Analysis
-This project is an analysis , focusing on customer Clustering with the FRM Model. Specifically, the RFM Model is one of the models used to analyze customers based on three metrics, with scores evaluated on a scale from 1 to 4, where 1 is the lowest and 4 is the highest.
-## R (Recency): The last time the customer used the service
-## F (Frequency): The frequency with which the customer uses the service
-## M (Monetary): The revenue generated from the service
+This project focuses on customer segmentation using the RFM model within a Customer 360 framework. The RFM model evaluates customer behavior across three key metrics—Recency, Frequency, and Monetary—scored on a scale from 1 (lowest) to 4 (highest).
+* R (Recency): The last time the customer used the service
+* F (Frequency): The frequency with which the customer uses the service
+* M (Monetary): The revenue generated from the service
+By leveraging these metrics, the analysis provides a comprehensive view of customer engagement and value, enabling more effective business decision-making.
 
-The main objectives of the project are:
+## Main objectives:
 
 1 - Understanding the fundamentals of RFM analysis and its role in customer segmentation.
 
-2 - Loan and Balance Correlation: To investigate the relationship between customers' loan status and their account balances. This helps to identify any significant patterns, such as whether customers with loans tend to have higher or lower balances.
+2 - Identifying key customer segments based on Recency, Frequency, and Monetary value.
 
-3 - Campaign Effectiveness: To evaluate how successful the marketing campaign was by analyzing contact methods and previous campaign outcomes. For example, measuring the conversion rate of customers who were contacted and whether previous marketing outcomes influenced the success of the campaign.
+3 - Gaining insights into customer behavior to support data-driven decision-making.
 
-4 - Seasonal Trends: To explore whether certain months show better campaign performance. This could help the bank optimize future marketing strategies based on seasonal trends.
+4 - Applying RFM insights to improve marketing strategies and enhance customer engagement.
 
-5 - Churn Analysis: To examine customer churn—whether certain factors like job type, marital status, or financial behavior (such as account balance or loan status) contribute to customers not subscribing to the bank's products.
+By using SQL queries, the analysis extracts meaningful insights from customer data to support strategic decisions and optimize business performance.
 
-By using SQL queries, the analyst aims to extract meaningful insights from this customer data to inform decisions on how to optimize marketing strategies and improve customer engagement.
+## Steps
+1 - **Data preparation and integration**
+Customer data was collected from two main tables: transaction data and customer registration data. These datasets were joined to ensure a complete view of customer behavior, while normalizing Frequency and Monetary values based on customer lifecycle.
+
+2 - **RFM metric calculation**
+Key metrics (Recency, Frequency, Monetary) were calculated using SQL techniques such as CTEs, window functions, and date functions to accurately measure customer activity and value.
+
+3 - **RFM scoring and segmentation**
+Customers were grouped into quartiles using the IQR method, assigning scores from 1 to 4 for each metric. These scores were then combined to form RFM segments and classified into meaningful customer groups (e.g., Loyalists, At Risk, Promising).
+
+4 - **Customer segmentation mapping (BCG Matrix)**
+RFM segments were mapped into four strategic groups—Star, Cash Cow, Question Mark, and Dog—to better understand customer value and prioritize business actions.
+
+## Analysis outcome
+1 - **Recency insight (engagement challenge)**
+The business is currently facing challenges in attracting and retaining active customers. The number of recently active customers is relatively low, while revenue is concentrated in less recent segments. This indicates a dependency on inactive customers and highlights a potential risk of revenue decline if churn increases.
+
+2 - **Frequency & Monetary insight (high impact opportunity)**
+Although customer distribution across Frequency and Monetary groups is relatively balanced, higher segments generate significantly more revenue. A small shift of customers from group 3 to group 4 can lead to a disproportionately large increase in revenue, highlighting strong leverage in improving high-value behaviors.
+
+3 - **Customer segmentation insight (growth potential)**
+The Question Mark segment represents the largest share of customers (approximately 47–48%). These customers typically perform well in only one RFM dimension, indicating untapped potential. This segment presents the greatest opportunity for growth, as improving their engagement across all dimensions could significantly increase overall revenue.
 
 Dashboard link: https://app.powerbi.com/groups/me/reports/9330ae91-7590-4c15-be52-6d8d546c04ca/935e9580cca98d251b90?experience=power-bi
 [Description]
